@@ -1,7 +1,7 @@
-# Vocabulary
-<eps> 0
-<sil> 1
-hey 2
-google 3
-partner 4
-siri 5
+<epsilon> 0
+<silence> 1
+okay 2
+hey 3
+google 4
+partner 5
+siri 6

@@ -2,12 +2,18 @@ from absl import app
 from absl import flags
 from dataclasses import dataclass
 from typing import List, Optional
+from itertools import filterfalse
 
 EPS = '<epsilon>'
 SIL = '<silence>'
 
 FLAGS = flags.FLAGS
 flags.DEFINE_string('phrases', None, 'List of phrases file.')
+
+
+def invalid_symbol(symbol: str) -> bool:
+  return symbol in [EPS, SIL]
+
 
 @dataclass
 class Arc:
@@ -26,12 +32,18 @@ class Arc:
 @dataclass
 class Fst:
   arcs: List[Arc]
-  end_state: int = 0
+  end_states: List[int]
 
-  def __add__(self, other: Arc):
-    arcs = self.arcs
-    end_state = max(self.end_state, other.istate, other.ostate)
-    return Fst(arcs=arcs, end_state=end_state)
+  def AddArc(self, other: Arc):
+    self.arcs.append(other)
+
+  def AddEndState(self, other: int):
+    self.end_states.append(other)
+
+  def __repr__(self):
+    strs = [f'{a}' for a in self.arcs]
+    strs += [f'{e}' for e in self.end_states]
+    return '\n'.join(strs)
 
 
 def phrase_to_arcs(phrase: str, start: int = 0) -> List[Arc]:
@@ -42,31 +54,38 @@ def phrase_to_arcs(phrase: str, start: int = 0) -> List[Arc]:
     result.append(Arc(idx, idx, SIL, EPS))
   return result
 
-def phrases_to_fst(phrases: List[str]) -> Fst:
-  result = Fst()
-  for phrase in phrases:
-    for idx, word in enumerate(phrase.split()):
-      result += Arc(idx, idx + 1, word, word)
-      result += Arc(idx, idx, SIL, EPS)
 
-    result.append(Arc(idx, idx + 1, word, word))
-    result.append(Arc(idx, idx, SIL, EPS))
+def phrases_to_fst(phrases: List[str]) -> Fst:
+  result = Fst([], [])
+  offset = 0
+  phrase_stack = []
+  phrases = [l.split()[0] for l in phrases]
+  for phrase in filterfalse(invalid_symbol, phrases):
+    phrase_words = phrase.split('_')
+    result.AddArc(Arc(0, offset + 1, phrase_words[0], phrase))
+    for idx, word in enumerate(phrase_words[1:], start=offset + 1):
+      result.AddArc(Arc(idx, idx + 1, word, EPS))
+      result.AddArc(Arc(idx, idx, SIL, EPS))
+    offset += len(phrase_words)
+    phrase_stack.append(offset)
+  for idx in phrase_stack:
+    result.AddArc(Arc(idx, offset, EPS, EPS))
+  result.AddEndState(offset)
   return result
 
+
 def vocab_fst(lines):
-  s = 0
-  for line in lines:
-    word, state = line.split()
-    if word in [EPS, SIL]:
-      continue  # epsilon
-    for i, l in enumerate(word):
-      if i == 0:
-        print(f'0 {s + 1} {l} {word}')
-      else:
-        s += 1
-        print(f'{s} {s + 1} {l} {EPS}')
-    s += 1
-    print(f'{s}')
+  result = Fst([], [])
+  offset = 0
+  words = [l.split()[0] for l in lines]
+  for word in filterfalse(invalid_symbol, words):
+    result.AddArc(Arc(0, offset + 1, word[0], word))
+    for i, letter in enumerate(word[1:], start=offset + 1):
+      result.AddArc(Arc(i, i + 1, letter, EPS))
+    offset += len(word)
+    result.AddEndState(offset)
+  return result
+
 
 def symbol_table(symbols: List[str]) -> List[str]:
   result = [f'{EPS} 0', f'{SIL} 1']
@@ -88,9 +107,11 @@ def readlines(filename: str) -> List[str]:
 def main(argv):
   del argv  # Unused
   phrases = readlines(FLAGS.phrases)
-  vocab = set(' '.join(phrases).split())
-  writelines('isyms.txt', '\n'.join(symbol_table(vocab)))
-  vocab_fst(symbol_table(vocab))
+  print(phrases_to_fst(phrases))
+  # vocab = set(' '.join(phrases).split())
+  # writelines('isyms.txt', '\n'.join(symbol_table(vocab)))
+  # x = vocab_fst(symbol_table(vocab))
+  # print(x)
 
 
 if __name__ == '__main__':

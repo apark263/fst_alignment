@@ -1,7 +1,7 @@
 <epsilon> 0
 <silence> 1
-hey 2
-partner 3
-okay 4
-google 5
-siri 6
+siri 2
+hey 3
+partner 4
+okay 5
+google 6
