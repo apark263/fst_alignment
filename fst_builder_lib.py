@@ -111,11 +111,11 @@ class Fst:
     return result
 
   @staticmethod
-  def FromPhrases(phrases: SymbolTable]):
+  def FromPhrases(phrases: SymbolTable):
     return Fst.MultiPathFst(phrases, lambda x: x.split('_'))
 
   @staticmethod
-  def FromWords(words: SymbolTable]):
+  def FromWords(words: SymbolTable):
     return Fst.MultiPathFst(words, lambda x: list(x), False)
 
 
