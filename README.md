@@ -24,3 +24,11 @@ fstdraw --isymbols=${isym} --osymbols=${osym} -portrait | dot -Tpdf > tmp2.pdf
 
 Create carrier sentence fst.
 
+
+fstcompile --isymbols=a_i --osymbols=g_i --keep_isymbols=1 --keep_osymbols=1 pos.txt.fst | fstdraw -portrait | dot -Tpng > pos.png
+fstcompile --isymbols=a_i --osymbols=g_i --keep_isymbols=1 --keep_osymbols=1 neg.txt.fst | fstdraw -portrait | dot -Tpng > neg.png
+
+fstunion neg.cfst pos.cfst | fstclosure - both.cfst
+
+fstcompile --isymbols=a_i --osymbols=a_i  tale.txt - | fstproject - tale.cfst
+

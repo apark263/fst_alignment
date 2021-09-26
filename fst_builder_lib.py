@@ -52,7 +52,7 @@ class Arc:
 
   def __repr__(self):
     wt = self.weight or ''
-    return f'{self.istate} {self.ostate} {self.isym} {self.osym} {wt}'
+    return f'{self.istate} {self.ostate} {self.isym} {self.osym} {wt:.05f}'
 
 
 @dataclass
@@ -77,6 +77,10 @@ class Fst:
     strs = [f'{a}' for a in self.arcs]
     strs += [f'{e}' for e in self.end_states]
     return '\n'.join(strs)
+
+  def to_file(self, filename: str):
+    with open(filename, 'w') as f:
+      f.write(str(self))
 
   @staticmethod
   def FromSentence(sentence: str):
@@ -156,6 +160,7 @@ def main(argv):
   hw_accept = PhraseAcceptor(phrases)
   hw_accept.input_symbols.ToFile('isyms.list')
   hw_accept.output_symbols.ToFile('osyms.list')
+
 
 if __name__ == '__main__':
   app.run(main)
